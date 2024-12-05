@@ -143,6 +143,11 @@ Jcc::Jcc(jcc_e type, std::string vip, std::string vsp)
 {
 }
 
+Jcc::Jcc(jcc_e type, std::string vip, std::string vsp, std::set<uint64_t> targets)
+    : type{ type }, vip{ std::move(vip) }, vsp{ std::move(vsp) }, targets{ std::move(targets) }
+{
+}
+
 const std::string& Jcc::vip_register() const noexcept
 {
     return vip;
@@ -151,6 +156,11 @@ const std::string& Jcc::vip_register() const noexcept
 const std::string& Jcc::vsp_register() const noexcept
 {
     return vsp;
+}
+
+std::set<uint64_t> Jcc::vip_targets() const noexcept
+{
+    return targets;
 }
 
 jcc_e Jcc::direction() const noexcept

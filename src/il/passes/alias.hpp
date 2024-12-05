@@ -5,13 +5,13 @@
 
 // Based on https://secret.club/2021/09/08/vmprotect-llvm-lifting-3.html#segmentsaa
 //
-struct SegmentsAAResult : public llvm::AAResultBase<SegmentsAAResult>
+struct SegmentsAAResult : public llvm::AAResultBase
 {
     bool invalidate(llvm::Function& f, const llvm::PreservedAnalyses& pa, llvm::FunctionAnalysisManager::Invalidator& inv);
-    llvm::AliasResult alias(const llvm::MemoryLocation& loc_a, const llvm::MemoryLocation& loc_b, llvm::AAQueryInfo& info);
+    llvm::AliasResult alias(const llvm::MemoryLocation& loc_a, const llvm::MemoryLocation& loc_b, llvm::AAQueryInfo& info, const llvm::Instruction *inst);
 
 private:
-    friend llvm::AAResultBase<SegmentsAAResult>;
+    friend llvm::AAResultBase;
 };
 
 struct SegmentsAA final : public llvm::AnalysisInfoMixin<SegmentsAA>

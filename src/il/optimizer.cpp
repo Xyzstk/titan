@@ -13,8 +13,6 @@
 #include <llvm/Analysis/ScopedNoAliasAA.h>
 #include <llvm/Analysis/BasicAliasAnalysis.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
-#include <llvm/Analysis/CFLAndersAliasAnalysis.h>
-#include <llvm/Analysis/CFLSteensAliasAnalysis.h>
 #include <llvm/Analysis/ScalarEvolutionAliasAnalysis.h>
 
 #include <llvm/Transforms/Utils/Cloning.h>
@@ -125,8 +123,6 @@ void optimize_function(llvm::Function* fn, const opt_guide& guide)
         aam.registerFunctionAnalysis<llvm::BasicAA>();
         aam.registerFunctionAnalysis<llvm::ScopedNoAliasAA>();
         aam.registerFunctionAnalysis<llvm::TypeBasedAA>();
-        aam.registerFunctionAnalysis<llvm::CFLAndersAA>();
-        aam.registerFunctionAnalysis<llvm::CFLSteensAA>();
         fam.registerPass([]    { return SegmentsAA();   });
         fam.registerPass([aam] { return std::move(aam); });
     }

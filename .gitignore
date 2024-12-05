@@ -8,5 +8,9 @@ tests/
 samples/
 examples/
 .vscode/
+.vs/
+vcpkg_installed/
+vcpkg_ports/
+*.json
 *.ll
 *.log

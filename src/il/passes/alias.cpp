@@ -131,7 +131,7 @@ Differentiate between:
 - stack array
 - stack slot
 */
-llvm::AliasResult SegmentsAAResult::alias(const llvm::MemoryLocation& loc_a, const llvm::MemoryLocation& loc_b, llvm::AAQueryInfo& info)
+llvm::AliasResult SegmentsAAResult::alias(const llvm::MemoryLocation& loc_a, const llvm::MemoryLocation& loc_b, llvm::AAQueryInfo& info, const llvm::Instruction *inst)
 {
     auto a_ty = get_pointer_type(loc_a.Ptr);
     auto b_ty = get_pointer_type(loc_b.Ptr);
@@ -140,7 +140,7 @@ llvm::AliasResult SegmentsAAResult::alias(const llvm::MemoryLocation& loc_a, con
     {
         return llvm::AliasResult::NoAlias;
     }
-    return AAResultBase::alias(loc_a, loc_b, info);
+    return AAResultBase::alias(loc_a, loc_b, info, inst);
 }
 
 llvm::AnalysisKey SegmentsAA::Key;

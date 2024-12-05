@@ -11,9 +11,10 @@ using namespace triton::arch::x86;
 Emulator::Emulator(triton::arch::architecture_e arch) noexcept
     : Context(arch)
     , image{ std::make_shared<Binary>() }
+    , inst_cnt(0)
 {
     setMode(modes::MEMORY_ARRAY, false);
-    setMode(modes::ALIGNED_MEMORY, true);
+    setMode(modes::ALIGNED_MEMORY, false);
     setMode(modes::CONSTANT_FOLDING, true);
     setMode(modes::AST_OPTIMIZATIONS, true);
     setMode(modes::PC_TRACKING_SYMBOLIC, false);
@@ -45,6 +46,7 @@ Emulator::Emulator(Emulator const& other) noexcept
 
     for (const auto& [addr, value] : other.getConcreteMemory())
         setConcreteMemoryValue(addr, value);
+    inst_cnt = other.inst_cnt;
     image = other.image;
 }
 
@@ -139,4 +141,5 @@ void Emulator::execute(triton::arch::Instruction& insn)
     {
         logger::error("Emulator::execute: Failed to execute instruction at 0x{:x}.", rip());
     }
+    inst_cnt++;
 }

@@ -79,8 +79,10 @@ std::vector<uint64_t> get_possible_targets(llvm::Value* ret)
     {
         // Failsafe.
         //
-        if (targets.size() > 2)
+        if (targets.size() > 2) {
+            logger::warn("Solver: failed to get jcc targets.");
             return {};
+        }
 
         auto model = api.getModel(constraints);
 

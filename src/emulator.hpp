@@ -9,6 +9,8 @@
 #include <triton/basicBlock.hpp>
 #include <triton/x86Specifications.hpp>
 
+static constexpr auto stack_base = 0x10000;
+
 struct Emulator : public triton::Context
 {
     explicit Emulator(triton::arch::architecture_e arch) noexcept;
@@ -25,6 +27,10 @@ struct Emulator : public triton::Context
     const triton::arch::Register& rsp_register() const noexcept;
 
     std::set<triton::arch::Register> regs() const noexcept;
+
+    // Track the number of executed instructions.
+    //
+    uint64_t inst_cnt;
 
     uint64_t read(const triton::arch::Register& reg) const noexcept;
     template<typename T>

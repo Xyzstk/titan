@@ -72,11 +72,17 @@ struct fmt::formatter<triton::arch::Register> : fmt::formatter<std::string>
 
 namespace logger
 {
+inline FILE* log_file;
+
 static void debug(const char* format, auto... args)
 {
     fmt::print(fg(fmt::color::dark_orange) | fmt::emphasis::bold, "[DEBUG] ");
     fmt::print(fmt::runtime(format), args...);
     fmt::print("\n");
+    
+    fmt::print(log_file, "[DEBUG] ");
+    fmt::print(log_file, fmt::runtime(format), args...);
+    fmt::print(log_file, "\n");
 }
 
 static void info(const char* format, const auto&... args)
@@ -84,6 +90,10 @@ static void info(const char* format, const auto&... args)
     fmt::print(fg(fmt::color::cadet_blue) | fmt::emphasis::bold, "[INFO]  ");
     fmt::print(fmt::runtime(format), args...);
     fmt::print("\n");
+    
+    fmt::print(log_file, "[INFO]  ");
+    fmt::print(log_file, fmt::runtime(format), args...);
+    fmt::print(log_file, "\n");
 }
 
 static void warn(const char* format, const auto&... args)
@@ -91,6 +101,10 @@ static void warn(const char* format, const auto&... args)
     fmt::print(fg(fmt::color::yellow) | fmt::emphasis::bold, "[WARN]  ");
     fmt::print(fmt::runtime(format), args...);
     fmt::print("\n");
+    
+    fmt::print(log_file, "[WARN]  ");
+    fmt::print(log_file, fmt::runtime(format), args...);
+    fmt::print(log_file, "\n");
 }
 
 static void error [[noreturn]](const char* format, const auto&... args)
@@ -98,6 +112,11 @@ static void error [[noreturn]](const char* format, const auto&... args)
     fmt::print(fg( fmt::color::red) | fmt::emphasis::bold, "[ERROR] ");
     fmt::print(fmt::runtime(format), args...);
     fmt::print("\n");
+    
+    fmt::print(log_file, "[ERROR] ");
+    fmt::print(log_file, fmt::runtime(format), args...);
+    fmt::print(log_file, "\n");
+    
     // Never return.
     //
     unreachable();

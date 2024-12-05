@@ -3,7 +3,9 @@
 #include <optional>
 #include <variant>
 #include <vector>
+#include <set>
 #include <string>
+#include <cstdint>
 
 struct Tracer;
 
@@ -174,15 +176,18 @@ private:
 struct Jcc
 {
     Jcc(jcc_e type, std::string vip, std::string vsp);
+    Jcc(jcc_e type, std::string vip, std::string vsp, std::set<uint64_t> targets);
 
     const std::string& vip_register() const noexcept;
     const std::string& vsp_register() const noexcept;
+    std::set<uint64_t> vip_targets()  const noexcept;
     jcc_e              direction()    const noexcept;
 
 private:
     jcc_e type;
     std::string vip;
     std::string vsp;
+    std::set<uint64_t> targets;
 };
 
 using Instruction = std::variant<Add, Nor, Nand, Shl, Shr, Shrd, Shld, Ldr, Str, Push, Pop, Jmp, Ret, Exit, Enter, Jcc>;

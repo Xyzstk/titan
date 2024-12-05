@@ -1,11 +1,57 @@
 #include "utils.hpp"
 
+#include <stack>
 #include <llvm/IR/Module.h>
 
-std::vector<triton::engines::symbolic::SharedSymbolicVariable> collect_variables(const triton::ast::SharedAbstractNode& ast)
+std::vector<triton::ast::SharedAbstractNode> childrenExtraction_noflags(const triton::ast::SharedAbstractNode& node) {
+    using namespace triton::ast;
+    std::vector<SharedAbstractNode> result;
+    std::unordered_set<AbstractNode*> visited;
+    std::stack<std::pair<SharedAbstractNode, bool>> worklist;
+
+    worklist.push({ node, false });
+
+    while (!worklist.empty()) {
+        SharedAbstractNode ast;
+        bool postOrder;
+        std::tie(ast, postOrder) = worklist.top();
+        worklist.pop();
+
+        if (postOrder) {
+            result.push_back(ast);
+            continue;
+        }
+
+        if (!visited.insert(ast.get()).second) {
+            continue;
+        }
+
+        worklist.push({ ast, true });
+
+        const auto& relatives = ast->getChildren();
+
+        for (const auto& r : relatives) {
+            if (visited.find(r.get()) == visited.end()) {
+                worklist.push({ r, false });
+            }
+        }
+
+        if (ast->getType() == REFERENCE_NODE) {
+            const auto& expr = reinterpret_cast<ReferenceNode*>(ast.get())->getSymbolicExpression();
+            const SharedAbstractNode& ref = expr->getAst();
+            if (expr->getComment().find("PUSHFQ") == std::string::npos && visited.find(ref.get()) == visited.end()) {
+                worklist.push({ ref, false });
+            }
+        }
+    }
+
+    return result;
+}
+
+std::vector<triton::engines::symbolic::SharedSymbolicVariable> collect_variables(const triton::ast::SharedAbstractNode& ast, bool noflags)
 {
     using namespace triton::ast;
-    const auto vec = childrenExtraction(ast, true, true);
+    const auto vec = noflags ? childrenExtraction_noflags(ast) : childrenExtraction(ast, true, true);
     return vec
         | ranges::views::filter   ([](const SharedAbstractNode& node){ return node->getType() == VARIABLE_NODE; })
         | ranges::views::transform([](const SharedAbstractNode& node){ return std::dynamic_pointer_cast<VariableNode>(node)->getSymbolicVariable(); })

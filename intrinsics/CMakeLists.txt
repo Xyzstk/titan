@@ -28,7 +28,7 @@ add_custom_command(OUTPUT
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-add_custom_target(${PROJECT_NAME} ALL
-    DEPENDS vmprotect64.ll vmprotect32.ll
-    SOURCES ${SOURCES}
-)
+# add_custom_target(${PROJECT_NAME} ALL
+#     DEPENDS vmprotect64.ll vmprotect32.ll
+#     SOURCES ${SOURCES}
+# )

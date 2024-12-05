@@ -10,6 +10,9 @@
 #include <llvm/Support/PrettyStackTrace.h>
 
 #include <fstream>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 llvm::cl::opt<uint64_t> entrypoint("e",
     llvm::cl::desc("Virtual address of vmenter"),
@@ -61,6 +64,13 @@ int main(int argc, char** argv)
     //
     llvm::cl::ParseCommandLineOptions(args.size(), args.data());
 
+    // Initialise logger.
+    //
+    std::ostringstream oss;
+    auto t = std::time(nullptr);
+    oss << std::put_time(std::localtime(&t), "log_%Y-%m-%d_%H-%M-%S.log");
+    fopen_s((FILE**)(&logger::log_file), oss.str().c_str(), "w");
+
     auto lifter = std::make_shared<Lifter>();
     auto tracer = std::make_shared<Tracer>(triton::arch::architecture_e::ARCH_X86_64);
     Explorer explorer(lifter, tracer);
@@ -71,6 +81,8 @@ int main(int argc, char** argv)
     il::optimize_virtual_function(fn);
 
     save_ir(fn, fmt::format("function.{}", output));
+
+    fclose((FILE*)(logger::log_file));
 
     return 0;
 }

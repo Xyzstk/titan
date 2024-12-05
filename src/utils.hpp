@@ -21,7 +21,7 @@ bool has_variable(const auto& range, const std::string& alias)
 
 bool has_variable(const auto& range, const std::string& alias, const auto&... args)
 {
-    return range.size() == 1 + sizeof...(args) && has_variable(range, alias) && has_variable(range, args...);
+    return range.size() >= 1 + sizeof...(args) && has_variable(range, alias) && has_variable(range, args...);
 }
 
 auto get_variable(const auto& range, const std::string& alias) -> std::optional<triton::engines::symbolic::SharedSymbolicVariable>
@@ -32,7 +32,8 @@ auto get_variable(const auto& range, const std::string& alias) -> std::optional<
     return {};
 }
 
-auto collect_variables(const triton::ast::SharedAbstractNode& ast) -> std::vector<triton::engines::symbolic::SharedSymbolicVariable>;
+auto childrenExtraction_noflags(const triton::ast::SharedAbstractNode& node) -> std::vector<triton::ast::SharedAbstractNode>;
+auto collect_variables(const triton::ast::SharedAbstractNode& ast, bool noflags = false) -> std::vector<triton::engines::symbolic::SharedSymbolicVariable>;
 bool is_variable(const triton::ast::SharedAbstractNode& node, const std::string& alias = "");
 auto to_variable(const triton::ast::SharedAbstractNode& node) -> triton::engines::symbolic::SharedSymbolicVariable;
 

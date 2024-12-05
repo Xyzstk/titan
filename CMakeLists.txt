@@ -4,7 +4,7 @@ project(titan)
 
 # Packages
 find_package(fmt CONFIG REQUIRED)
-find_package(LLVM 15.0 CONFIG REQUIRED)
+find_package(LLVM CONFIG REQUIRED)
 find_package(triton CONFIG REQUIRED)
 find_package(range-v3 CONFIG REQUIRED)
 
@@ -24,6 +24,83 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   fmt::fmt
   range-v3 
   triton::triton
+  LLVMWindowsManifest
+  LLVMWindowsDriver
+  LLVMXRay
+  LLVMLibDriver
+  LLVMDlltoolDriver
+  LLVMCoverage
+  LLVMLineEditor
+  LLVMX86TargetMCA
+  LLVMX86Disassembler
+  LLVMX86AsmParser
+  LLVMX86CodeGen
+  LLVMX86Desc
+  LLVMX86Info
+  LLVMOrcJIT
+  LLVMMCJIT
+  LLVMJITLink
+  LLVMInterpreter
+  LLVMExecutionEngine
+  LLVMRuntimeDyld
+  LLVMOrcTargetProcess
+  LLVMOrcShared
+  LLVMDWP
+  LLVMDebugInfoGSYM
+  LLVMOption
+  LLVMObjectYAML
+  LLVMObjCopy
+  LLVMMCA
+  LLVMMCDisassembler
+  LLVMLTO
+  LLVMPasses
+  LLVMCFGuard
+  LLVMCoroutines
+  LLVMObjCARCOpts
+  LLVMipo
+  LLVMVectorize
+  LLVMLinker
+  LLVMInstrumentation
+  LLVMFrontendOpenMP
+  LLVMFrontendOpenACC
+  LLVMExtensions
+  LLVMDWARFLinker
+  LLVMGlobalISel
+  LLVMMIRParser
+  LLVMAsmPrinter
+  LLVMSelectionDAG
+  LLVMCodeGen
+  LLVMIRReader
+  LLVMAsmParser
+  LLVMInterfaceStub
+  LLVMFileCheck
+  LLVMFuzzMutate
+  LLVMTarget
+  LLVMScalarOpts
+  LLVMInstCombine
+  LLVMAggressiveInstCombine
+  LLVMTransformUtils
+  LLVMBitWriter
+  LLVMAnalysis
+  LLVMProfileData
+  LLVMSymbolize
+  LLVMDebugInfoPDB
+  LLVMDebugInfoMSF
+  LLVMDebugInfoDWARF
+  LLVMObject
+  LLVMTextAPI
+  LLVMMCParser
+  LLVMMC
+  LLVMDebugInfoCodeView
+  LLVMBitReader
+  LLVMFuzzerCLI
+  LLVMCore
+  LLVMRemarks
+  LLVMBitstreamReader
+  LLVMBinaryFormat
+  LLVMTableGen
+  LLVMSupport
+  LLVMDemangle
 )
 
 add_subdirectory(intrinsics)

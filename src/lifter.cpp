@@ -34,6 +34,8 @@ Lifter::Lifter() : ir(context)
     if (parsed == nullptr)
     {
         logger::error("Lifter::Lifter: Failed to parse intrinsics file");
+        err.print("Lifter::Lifter", llvm::errs());
+        exit(1);
     }
     module = std::move(parsed);
     // Extract helper functions.
@@ -176,7 +178,12 @@ llvm::Function* Lifter::build_function(const vm::Routine* rtn, uint64_t target_b
                     break;
                 }
                 default:
-                    llvm_unreachable("Switch statement is currently not supported.");
+                    // Out-of-bound indices are filtered out in former blocks and won't meet the jump table, so no need to handle default here.
+                    auto dummy_bb = llvm::BasicBlock::Create(context, fmt::format("bb_dummy_0x{:x}", vblock->vip()), function);
+                    llvm::ReturnInst::Create(context, pc, dummy_bb);
+                    auto switch_inst = ir.CreateSwitch(pc, dummy_bb, vblock->next.size());
+                    for (auto target : vblock->next)
+                        switch_inst->addCase(ir.getInt64(target->vip()), blocks.at(target->vip()));
             }
         }
         else
@@ -231,8 +238,10 @@ llvm::Function* Lifter::clone(llvm::Function* fn)
 
 llvm::Function* Lifter::sem(const std::string& name) const
 {
-    if (sems.find(name) == sems.end())
+    if (sems.find(name) == sems.end()) {
         logger::error("Failed to find {} semantic", name);
+        exit(1);
+    }
     return sems.at(name);
 }
 

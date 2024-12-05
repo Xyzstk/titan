@@ -4,8 +4,6 @@
 #include "asserts.hpp"
 #include "utils.hpp"
 
-static constexpr auto stack_base = 0x10000;
-
 Explorer::Explorer(std::shared_ptr<Lifter> lifter, std::shared_ptr<Tracer> tracer)
     : lifter(lifter), tracer(tracer), block(nullptr), terminate(false)
 {
@@ -143,7 +141,7 @@ void Explorer::operator()(vm::Jmp&& insn)
     auto vip = tracer->vip();
     block->fork(vip);
     worklist.push(vip);
-    snapshots.emplace(vip, tracer->fork());
+    snapshots.emplace(vip, tracer->fork(true));
     // Terminate current block.
     //
     terminate = true;
@@ -171,12 +169,17 @@ void Explorer::operator()(vm::Jcc&& insn)
     il::optimize_block_function(slice);
 
     auto ret = lifter->get_return_args(slice);
+    auto possible_targets = il::get_possible_targets(ret.program_counter());
+    auto jtable_targets = insn.vip_targets();
+    logger::debug("jtable_targets: {}, possible_targets: {}", jtable_targets.size(), possible_targets.size());
+    bool fork_ast = jtable_targets.empty();
+    jtable_targets.insert(possible_targets.begin(), possible_targets.end());
 
-    for (const auto target : il::get_possible_targets(ret.program_counter()))
+    for (const auto target : jtable_targets)
     {
         logger::info("\tjcc -> 0x{:x}", target);
 
-        auto fork = tracer->fork();
+        auto fork = tracer->fork(fork_ast);
         fork->write(fork->vsp(), target - (insn.direction() == vm::jcc_e::up ? 1 : -1) * 4);
         // Execute branch instruction.
         //
@@ -278,7 +281,7 @@ void Explorer::reprove_block()
         {
             logger::info("\tfound new branch: 0x{:x}", target);
 
-            auto fork = tracer->fork();
+            auto fork = tracer->fork(true);
             auto insn = std::get<vm::Jcc>(tracer->step(step_t::stop_before_branch));
 
             fork->write(fork->vsp(), target - (insn.direction() == vm::jcc_e::up ? 1 : -1) * 4);
