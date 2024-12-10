@@ -169,7 +169,7 @@ void Explorer::operator()(vm::Jcc&& insn)
     il::optimize_block_function(slice);
 
     auto ret = lifter->get_return_args(slice);
-    auto possible_targets = il::get_possible_targets(ret.program_counter());
+    auto possible_targets = il::get_possible_targets(ret.program_counter(), tracer);
     auto jtable_targets = insn.vip_targets();
     logger::debug("jtable_targets: {}, possible_targets: {}", jtable_targets.size(), possible_targets.size());
     bool fork_ast = jtable_targets.empty();
@@ -227,6 +227,7 @@ void Explorer::operator()(vm::Exit&& insn)
         {
             if (auto cint = llvm::dyn_cast<llvm::ConstantInt>(gep->getOperand(gep->getNumOperands() - 1)))
             {
+                block->external_call = cint->getLimitedValue();
                 lifter->create_external_call(block->lifted, fmt::format("External.0x{:x}", cint->getLimitedValue()));
                 il::optimize_block_function(block->lifted);
             }
@@ -234,6 +235,7 @@ void Explorer::operator()(vm::Exit&& insn)
     }
     else if (auto cint = llvm::dyn_cast<llvm::ConstantInt>(args.program_counter()))
     {
+        block->external_call = cint->getLimitedValue();
         lifter->create_external_call(block->lifted, fmt::format("External.0x{:x}", cint->getLimitedValue()));
         il::optimize_block_function(block->lifted);
     }
@@ -275,7 +277,7 @@ void Explorer::reprove_block()
 
     auto ret = lifter->get_return_args(slice);
 
-    for (const auto target : il::get_possible_targets(ret.program_counter()))
+    for (const auto target : il::get_possible_targets(ret.program_counter(), tracer))
     {
         if (!block->owner->contains(target))
         {

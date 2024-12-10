@@ -22,7 +22,7 @@ llvm::cl::opt<uint64_t> entrypoint("e",
 llvm::cl::opt<std::string> output("o",
     llvm::cl::desc("Path to the output .ll file"),
     llvm::cl::value_desc("output"),
-    llvm::cl::init("output.ll"),
+    llvm::cl::init("output"),
     llvm::cl::Optional);
 
 // Necessary command line optimization flags for llvm. Thank you Matteo.
@@ -80,7 +80,9 @@ int main(int argc, char** argv)
 
     il::optimize_virtual_function(fn);
 
-    save_ir(fn, fmt::format("function.{}", output));
+    save_ir(fn, fmt::format("function.{}.ll", output));
+
+    save_vinst(rtn.get(), fmt::format("vinst.{}.s", output));
 
     fclose((FILE*)(logger::log_file));
 

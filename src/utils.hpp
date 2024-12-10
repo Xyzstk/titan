@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vm/routine.hpp"
+
 #include <triton/ast.hpp>
 #include <triton/instruction.hpp>
 #include <triton/symbolicEngine.hpp>
@@ -71,3 +73,9 @@ bool op_ret(const triton::arch::Instruction& insn);
 
 void save_ir(llvm::Value* value,   const std::string& filename);
 void save_ir(llvm::Module* module, const std::string& filename);
+
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+void save_vinst(vm::Routine* routine, const std::string& filename);

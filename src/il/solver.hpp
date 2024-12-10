@@ -1,4 +1,7 @@
 #pragma once
+
+#include "tracer.hpp"
+
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
@@ -17,5 +20,5 @@ class Value;
 
 namespace il
 {
-std::vector<uint64_t> get_possible_targets(llvm::Value* ret);
+std::vector<uint64_t> get_possible_targets(llvm::Value* ret, std::shared_ptr<Tracer> tracer);
 };

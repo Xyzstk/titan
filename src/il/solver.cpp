@@ -27,7 +27,7 @@ llvm::cl::opt<bool> print_branch_ast("solver-print-ast",
 
 namespace il
 {
-std::vector<uint64_t> get_possible_targets(llvm::Value* ret)
+std::vector<uint64_t> get_possible_targets(llvm::Value* ret, std::shared_ptr<Tracer> tracer)
 {
     if (ret == nullptr)
     {
@@ -109,30 +109,56 @@ std::vector<uint64_t> get_possible_targets(llvm::Value* ret)
         std::unordered_set<AbstractNode*> visited;
         std::stack<SharedAbstractNode*> worklist;
 
+        auto get_parent_set = [](SharedAbstractNode& node) -> std::unordered_set<AbstractNode*> {
+            std::unordered_set<AbstractNode*> res;
+            for (auto& parent : node->getParents())
+                res.insert(parent.get());
+            return res;
+        };
+
         worklist.push(&node);
 
         while (!worklist.empty()) {
-            SharedAbstractNode& ast = *worklist.top();
+            SharedAbstractNode& node = *worklist.top();
             worklist.pop();
 
-            if (!visited.insert(ast.get()).second) {
+            if (!visited.insert(node.get()).second) {
                 continue;
             }
 
-            if (ast->getType() == ITE_NODE) {
+            // We know that OR with a value that has only one 0 or AND with a value that has only one 1 is the same as an ITE node.
+            if (node->getType() == BVAND_NODE || node->getType() == BVOR_NODE) {
+                for (const auto& operand : node->getChildren()) {
+                    if (operand->getType() == BV_NODE) {
+                        auto value = operand->evaluate();
+                        auto size = operand->getBitvectorSize();
+                        if (node->getType() == BVOR_NODE) value ^= operand->getBitvectorMask();
+                        if ((value & (value - 1)) == 0) {
+                            auto parents = get_parent_set(node);
+                            node = ast->ite(ast->equal(node, ast->bv(operand->evaluate(), size)),
+                                ast->bv(operand->evaluate(), size),
+                                ast->bv(node->getType() == BVOR_NODE ? operand->getBitvectorMask() : 0, size));
+                            node->setParent(parents);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (node->getType() == ITE_NODE) {
                 // Save the reference to the shared_ptr and also keep a copy of it so the node doesn't get destroyed.
-                ite_nodes.push_back({ ast, ast });
+                ite_nodes.push_back({ node, node });
                 continue;
             }
 
-            for (auto& r : ast->getChildren()) {
+            for (auto& r : node->getChildren()) {
                 if (visited.find(r.get()) == visited.end()) {
                     worklist.push(&r);
                 }
             }
         }
 
-        if (ite_nodes.size() > 4) {
+        if (ite_nodes.size() > 8) {
             logger::warn("get_possible_targets: too many ite nodes. failed to simplify");
             return {};
         }
@@ -142,17 +168,53 @@ std::vector<uint64_t> get_possible_targets(llvm::Value* ret)
 
         logger::debug("trying to simplify ast");
 
+        for (auto& [ref, original] : ite_nodes) {
+            auto parents = get_parent_set(original);
+            original->getChildren()[1]->setParent(parents);
+            original->getChildren()[2]->setParent(parents);
+        }
+
         std::set<uint64_t> simp_targets;
+        std::set<uint64_t> invalid_targets;
+
+        auto fork = tracer->fork();
+        auto insn = std::get<vm::Jcc>(fork->step(step_t::execute_branch));
+        uint64_t inst_cnt = fork->inst_cnt;
+
+        // Random branch combinations might return invalid results; we need to filter them out.
+        auto is_target_valid = [tracer, insn, inst_cnt](uint64_t target) -> bool {
+            auto fork = tracer->fork();
+            fork->write(fork->vsp(), target - (insn.direction() == vm::jcc_e::up ? 1 : -1) * 4);
+            while (fork->inst_cnt < inst_cnt)
+                fork->single_step();
+            for (int j = 0; j < 10; j++)
+            {
+                auto inst = fork->single_step();
+                if (op_mov_register_memory(inst))
+                {
+                    return true;
+                }
+            }
+            return false;
+        };
 
         for (int i = 0; i < 1 << ite_nodes.size(); i++) {
             if (simp_targets.size() > 2)
                 break;
 
-            for (int j = 0; j < ite_nodes.size(); j++)
+            for (int j = 0; j < ite_nodes.size(); j++) {
                 ite_nodes[j].first = ite_nodes[j].second->getChildren()[(i & (1 << j)) ? 2 : 1];
+                ite_nodes[j].first->init(true);
+            }
 
-            if (collect_variables(node).empty()) {
-                simp_targets.insert(static_cast<uint64_t>(node->evaluate()));
+            if (!node->isSymbolized()) {
+                uint64_t target = static_cast<uint64_t>(node->evaluate());
+                if (!simp_targets.contains(target) && !invalid_targets.contains(target)) {
+                    if (is_target_valid(target))
+                        simp_targets.insert(target);
+                    else
+                        invalid_targets.insert(target);
+                }
                 continue;
             }
 
@@ -170,7 +232,12 @@ std::vector<uint64_t> get_possible_targets(llvm::Value* ret)
                     api.setConcreteVariableValue(api.getSymbolicVariable(id), sym.getValue());
 
                 auto target = static_cast<uint64_t>(node->evaluate());
-                simp_targets.insert(target);
+                if (!simp_targets.contains(target) && !invalid_targets.contains(target)) {
+                    if (is_target_valid(target))
+                        simp_targets.insert(target);
+                    else
+                        invalid_targets.insert(target);
+                }
                 // Update constraints.
                 //
                 constraints = ast->land(constraints, ast->distinct(node, ast->bv(target, node->getBitvectorSize())));

@@ -188,7 +188,7 @@ bool op_enter(const Instruction& insn)
 
 bool op_exit(const Instruction& insn)
 {
-    return std::holds_alternative<Exit>(insn);
+    return std::holds_alternative<Ret>(insn);
 }
 
 bool op_pop(const Instruction& insn)

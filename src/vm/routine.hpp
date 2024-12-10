@@ -50,6 +50,8 @@ struct BasicBlock
 
     std::vector<BasicBlock*> next;
 
+    std::optional<uint64_t> external_call;
+
 private:
     uint64_t vip_;
 
